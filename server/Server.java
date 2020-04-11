@@ -30,7 +30,7 @@ public class Server {
 
                     System.out.println("client connected");
                     for (String line = br.readLine(); line != null; line = br.readLine()) {
-
+                        System.out.println("got message: " + line);
                         // try {
                         // int i = Integer.parseInt(line);
 
