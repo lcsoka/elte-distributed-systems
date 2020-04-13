@@ -14,7 +14,7 @@ public class Client implements AutoCloseable, IClient, Runnable {
     private final BufferedReader fromUser;
     private final PrintWriter toUser;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
         try {
             Client client = new Client(System.in, System.out);
@@ -108,6 +108,7 @@ public class Client implements AutoCloseable, IClient, Runnable {
         // Send the document name to the server
         this.toServer.println(fileName);
 
+        this.toUser.println("|  Enter document content:");
         // Read lines from client
         for (String line = this.fromUser.readLine(); line != null; line = this.fromUser.readLine()) {
             // If we found an EOF line, send an END_OF_DOCUMENT command

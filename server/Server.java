@@ -1,6 +1,7 @@
 package server;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.util.LinkedHashSet;
 
@@ -20,6 +21,8 @@ public class Server {
                 Thread t = new Thread(new ClientHandler(ss, indexes));
                 t.start();
             }
+        } catch (BindException exception) {
+            System.out.println("Cannot start server, because the following port is already in use: " + port);
         }
     }
 }
