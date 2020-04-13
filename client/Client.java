@@ -99,15 +99,42 @@ public class Client implements AutoCloseable, IClient, Runnable {
     }
 
     @Override
-    public void handleListDocuments() throws IOException {
-        // TODO Auto-generated method stub
+    public void handleUploadDocument() throws IOException {
+        // Send UPLOAD_DOCUMENT command to the server
+        this.toServer.println(Command.UPLOAD_DOCUMENT);
+        // Get the document name to download
+        this.toUser.println("|  Enter document name:");
+        String fileName = this.fromUser.readLine();
+        // Send the document name to the server
+        this.toServer.println(fileName);
 
+        // Read lines from client
+        for (String line = this.fromUser.readLine(); line != null; line = this.fromUser.readLine()) {
+            // If we found an EOF line, send an END_OF_DOCUMENT command
+            if (line.equals(Command.EOF.toString())) {
+                this.toServer.println(Command.END_OF_DOCUMENT.toString());
+                break;
+            } else {
+                this.toServer.println(line);
+            }
+        }
     }
 
     @Override
-    public void handleUploadDocument() throws IOException {
-        // TODO Auto-generated method stub
+    public void handleListDocuments() throws IOException {
+        // Send LIST_DOCUMENT command to the server
+        this.toServer.println(Command.LIST_DOCUMENT);
 
+        // Wait for response from server
+        for (String line = this.fromServer.readLine(); line != null; line = this.fromServer.readLine()) {
+            if (line.equals(Command.END_OF_LIST.toString())) {
+                // End of document
+                break;
+            } else {
+                // Print message
+                this.toUser.println("| " + line);
+            }
+        }
     }
 
     @Override
@@ -115,6 +142,7 @@ public class Client implements AutoCloseable, IClient, Runnable {
         System.out.println("Trying to close resources");
         this.fromServer.close();
         this.toServer.close();
+        this.socket.close();
     }
 
     private void printMenu() {
