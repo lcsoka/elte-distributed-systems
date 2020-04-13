@@ -1,54 +1,60 @@
 package client;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 
 public class Client implements AutoCloseable, IClient, Runnable {
 
     private static int port = 50000;
 
+    private final Socket socket;
+    private final BufferedReader from;
+    private final PrintWriter to;
+    private final BufferedReader fromUser;
+    private final PrintWriter toUser;
+
     public static void main(String[] args) {
 
         try {
             Client client = new Client(System.in, System.out);
+            client.run();
         } catch (IOException exception) {
             System.out.println("There was an error initializing the client.");
+            exception.printStackTrace();
         }
     }
 
     @Override
     public void run() {
-        // TODO Auto-generated method stub
-
+        try {
+            for (String input = fromUser.readLine(); input != null; input = fromUser.readLine()) {
+                // Send command to server
+                // TODO: With interface functions
+                this.to.println(input);
+            }
+        } catch (IOException exception) {
+            System.out.println("Error while running");
+        }
     }
 
     Client(InputStream userInput, OutputStream userOutput) throws IOException {
-        System.out.println("Client initialized");
-        try (Socket s = new Socket("localhost", port);
-                InputStream is = s.getInputStream();
-                InputStreamReader isr = new InputStreamReader(is);
-                BufferedReader br = new BufferedReader(isr);
-                PrintWriter pw = new PrintWriter(s.getOutputStream(), true);) {
-            System.out.println("Connected to server");
+        // Create socket
+        this.socket = new Socket("localhost", port);
 
-            InputStream is2 = System.in;
-            InputStreamReader isr2 = new InputStreamReader(is2);
-            BufferedReader fromUser = new BufferedReader(isr2);
+        // Create buffered reader
+        InputStream is = this.socket.getInputStream();
+        InputStreamReader isr = new InputStreamReader(is);
+        this.from = new BufferedReader(isr);
 
-            for (String input = fromUser.readLine(); input != null; input = fromUser.readLine()) {
-                pw.println(input);
-                // pw.flush();
+        // Create print writer
+        this.to = new PrintWriter(this.socket.getOutputStream(), true);
 
-                String line = br.readLine();
-                System.out.println(line);
-            }
-        }
+        // Get user input reader
+        InputStreamReader isr2 = new InputStreamReader(userInput);
+        this.fromUser = new BufferedReader(isr2);
 
+        // Create user print writer
+        this.toUser = new PrintWriter(userOutput, true);
     }
 
     @Override
@@ -71,7 +77,8 @@ public class Client implements AutoCloseable, IClient, Runnable {
 
     @Override
     public void close() throws Exception {
-        // TODO Auto-generated method stub
-
+        System.out.println("Trying to close resources");
+        this.from.close();
+        this.to.close();
     }
 }

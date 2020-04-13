@@ -1,28 +1,50 @@
 package server;
 
-import java.io.BufferedReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.LinkedHashSet;
 
 public class ClientHandler implements AutoCloseable, IClientHandler, Runnable {
 
-    private ServerSocket serverSocket;
     private LinkedHashSet<String> files;
+    private final BufferedReader from;
+    private final PrintWriter to;
+    private final Socket socket;
 
-    ClientHandler(ServerSocket ss, LinkedHashSet<String> contents) {
-        this.serverSocket = ss;
+    ClientHandler(ServerSocket ss, LinkedHashSet<String> contents) throws IOException {
+        this.socket = ss.accept();
+        InputStream is = socket.getInputStream();
+        InputStreamReader isr = new InputStreamReader(is);
+        this.from = new BufferedReader(isr);
+        this.to = new PrintWriter(socket.getOutputStream(), true);
         this.files = contents;
+        System.out.println("Client handler created");
     }
 
     @Override
     public void run() {
-        // TODO Auto-generated method stub
+        System.out.println("Client Handler run");
+        try {
+            for (String line = this.from.readLine(); line != null; line = this.from.readLine()) {
+                System.out.println(line);
+            }
+        } catch (IOException exception) {
+            System.out.println("Client Handler error while running: " + exception.toString());
+        }
+        System.out.println("End of run");
+        try {
+            this.close();
+        } catch (Exception e) {
+
+        }
     }
 
     @Override
     public void close() throws Exception {
-        this.serverSocket.close();
+        System.out.println("Trying to close client handler");
+        this.from.close();
+        this.to.close();
     }
 
     @Override
