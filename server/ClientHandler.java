@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.LinkedHashSet;
+import shared.Command;
 
 public class ClientHandler implements AutoCloseable, IClientHandler, Runnable {
 
@@ -27,7 +28,27 @@ public class ClientHandler implements AutoCloseable, IClientHandler, Runnable {
         System.out.println("Client Handler run");
         try {
             for (String line = this.from.readLine(); line != null; line = this.from.readLine()) {
-                System.out.println(line);
+                try {
+                    Command cmd = Command.valueOf(line);
+                    switch (cmd) {
+                        case DOWNLOAD_DOCUMENT:
+                            this.handleDownloadDocument(this.from, this.to);
+                            break;
+                        case LIST_DOCUMENT:
+                            this.handleListDocuments(this.to);
+                            break;
+                        case UPLOAD_DOCUMENT:
+                            this.handleUploadDocument(this.from, this.to);
+                            break;
+                        default:
+                            System.out.println("Invalid command: " + line);
+                            this.handleUnknownRequest(this.to);
+                    }
+
+                } catch (IllegalArgumentException exception) {
+                    System.out.println("Invalid command: " + line);
+                    this.handleUnknownRequest(this.to);
+                }
             }
         } catch (IOException exception) {
             System.out.println("Client Handler error while running: " + exception.toString());
@@ -48,8 +69,15 @@ public class ClientHandler implements AutoCloseable, IClientHandler, Runnable {
     }
 
     @Override
-    public void handleDownloadDocument(BufferedReader fromClient, PrintWriter toClient) {
-        // TODO Auto-generated method stub
+    public void handleDownloadDocument(BufferedReader fromClient, PrintWriter toClient) throws IOException {
+        String fileName = fromClient.readLine();
+        System.out.println("Got file name: " + fileName);
+        if (this.files.contains(fileName)) {
+            System.out.println("File exists");
+        } else {
+            System.out.println("File does not exist!");
+            toClient.println(Command.NOT_FOUND.toString());
+        }
 
     }
 
