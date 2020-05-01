@@ -71,22 +71,24 @@ public class ClientHandler implements AutoCloseable, IClientHandler, Runnable {
     public void handleDownloadDocument(BufferedReader fromClient, PrintWriter toClient) throws IOException {
         String fileName = fromClient.readLine();
         // System.out.println("Got file name: " + fileName);
-        if (this.files.contains(fileName)) {
-            // System.out.println("File exists");
-            synchronized (fileName.intern()) {
-                File input = new File(fileName);
-                try (FileInputStream fi = new FileInputStream(input);
-                        InputStreamReader isr = new InputStreamReader(fi);
-                        BufferedReader br = new BufferedReader(isr);) {
-                    for (String line = br.readLine(); line != null; line = br.readLine()) {
-                        toClient.println(line);
+        synchronized (this.files) {
+            if (this.files.contains(fileName)) {
+                // System.out.println("File exists");
+                synchronized (fileName.intern()) {
+                    File input = new File(fileName);
+                    try (FileInputStream fi = new FileInputStream(input);
+                            InputStreamReader isr = new InputStreamReader(fi);
+                            BufferedReader br = new BufferedReader(isr);) {
+                        for (String line = br.readLine(); line != null; line = br.readLine()) {
+                            toClient.println(line);
+                        }
+                        toClient.println(Command.END_OF_DOCUMENT.toString());
                     }
-                    toClient.println(Command.END_OF_DOCUMENT.toString());
                 }
+            } else {
+                System.out.println("File does not exist!");
+                toClient.println(Command.NOT_FOUND.toString());
             }
-        } else {
-            System.out.println("File does not exist!");
-            toClient.println(Command.NOT_FOUND.toString());
         }
     }
 
@@ -111,10 +113,12 @@ public class ClientHandler implements AutoCloseable, IClientHandler, Runnable {
                 }
             }
 
-            if (this.files.contains(fileName)) {
-                System.out.println("File overwritten.");
-            } else {
-                this.files.add(fileName);
+            synchronized (this.files) {
+                if (this.files.contains(fileName)) {
+                    System.out.println("File overwritten.");
+                } else {
+                    this.files.add(fileName);
+                }
             }
         }
 
@@ -122,10 +126,12 @@ public class ClientHandler implements AutoCloseable, IClientHandler, Runnable {
 
     @Override
     public void handleListDocuments(PrintWriter toClient) throws IOException {
-        this.files.forEach(file -> {
-            toClient.println(file);
-        });
-        toClient.println(Command.END_OF_LIST.toString());
+        synchronized (this.files) {
+            this.files.forEach(file -> {
+                toClient.println(file);
+            });
+            toClient.println(Command.END_OF_LIST.toString());
+        }
     }
 
     @Override
